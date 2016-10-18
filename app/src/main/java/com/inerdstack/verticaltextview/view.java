@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.text.Editable;
 import android.text.Spannable;
@@ -55,11 +56,19 @@ public class view extends View {
 
     // -间距
     // 字间距
-    private float mLetterSpacing = DEFAULT_LETTER_SPACING;
+    private float mCharSpacing = DEFAULT_LETTER_SPACING;
     // 行间距尺寸
     private float mLineSpacingExtra = DEFAULT_GLOBAL;
     // 行间距倍数
     private float mLineSpacingMultiplier = DEFAULT_LINE_SPACING_MULTIPLIER;
+
+    // -标记
+    // 尺寸有效标记
+    private static final int ENABLE_SPACING_EXTRA = 0x01;
+    // 尺寸倍数有效
+    private static final int ENABLE_SPACING_MULTIPLIER = 0x02;
+    // 标记当前间距倍数有效还是尺寸有效，初始化倍数有效
+    private int mLineSpacing = ENABLE_SPACING_MULTIPLIER;
 
     // -整体
     // 视图宽度
@@ -69,13 +78,17 @@ public class view extends View {
     // 最大行数
     private int mMaxLines = DEFAULT_GLOBAL;
 
+    // -非对外属性变量
+    // 单个文字尺寸
+    private float mTextDimen;
+
     // -工具
     // 绘制文本的笔刷
     private Paint mPaint;
     // 矩阵
     private Matrix mMatrix;
     // 背景
-    private BitmapDrawable mBackground = (BitmapDrawable) getBackground();
+    private BitmapDrawable mBackground;
 
     public view(Context context) {
         this(context, null);
@@ -96,8 +109,20 @@ public class view extends View {
      * 初始化视图
      */
     private void initView() {
+        // 初始化工具
+        initTools();
+        // 同步默认数据数据
+        syncParams();
+    }
+
+    /**
+     * 初始化工具
+     */
+    private void initTools() {
         // 初始化矩阵
         mMatrix = new Matrix();
+        // 初始化背景
+        mBackground = (BitmapDrawable) getBackground();
         //初始化笔刷
         mPaint = new Paint();
         // 文字居中
@@ -105,6 +130,30 @@ public class view extends View {
         // 去锯齿
         mPaint.setAntiAlias(true);
     }
+
+    /**
+     * 同步参数
+     */
+    private void syncParams() {
+        // TODO: 单个文字尺寸同步
+        mTextDimen = getCharDimen();
+        // TODO: 行间距同步
+
+    }
+
+    /**
+     * 以汉字“汉”为例，计算宽度
+     */
+    private float getCharDimen() {
+        // 设置字体大小
+        mPaint.setTextSize(mTextSize);
+        // 初始化字体矩阵
+        Paint.FontMetrics fontMetrics = mPaint.getFontMetrics();
+        // 返回字体高度
+        return fontMetrics.descent - fontMetrics.ascent;
+    }
+
+
 
     /**
      * 视图大小
@@ -128,7 +177,7 @@ public class view extends View {
         if (mBackground != null) {
             // 画背景
 //            Bitmap bitmap = Bitmap.createBitmap(mBackground.getBitmap(),
-//                    0, 0;)
+//                    0, 0, )
         }
     }
 
@@ -185,8 +234,8 @@ public class view extends View {
      * @param spacing
      */
     public void setLetterSpacing(float spacing) {
-        if (mLetterSpacing != spacing) {
-            this.mLetterSpacing = spacing;
+        if (mCharSpacing != spacing) {
+            this.mCharSpacing = spacing;
             // 刷新绘制
             validate();
         }
