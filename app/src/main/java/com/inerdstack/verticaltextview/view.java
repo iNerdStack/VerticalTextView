@@ -127,8 +127,8 @@ public class view extends View {
         // 绘制背景
         if (mBackground != null) {
             // 画背景
-            Bitmap bitmap = Bitmap.createBitmap(mBackground.getBitmap(),
-                    0, 0;)
+//            Bitmap bitmap = Bitmap.createBitmap(mBackground.getBitmap(),
+//                    0, 0;)
         }
     }
 
