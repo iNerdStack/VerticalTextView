@@ -36,6 +36,8 @@ public class MyTextView extends View {
     private int mPosX = DEFAULT_GLOBAL;
     // 笔刷所在位置 Y
     private int mPosY = DEFAULT_GLOBAL;
+    // 初始y轴位置
+    private static final int INTIAL_Y = 0;
 
     // -文本
     // 文本内容
@@ -162,8 +164,10 @@ public class MyTextView extends View {
         Log.i("wdd", "measureLineSpacing");
         // 如果行间距未设定，则以行间距倍数来计算
         if (mLineSpacingExtra == DEFAULT_GLOBAL) {
+            Log.i("wdd", "line spacing is not set");
             mLineSpacingExtra = mLineSpacingMultiplier * mTextDimen;
         }
+        Log.i("wdd", "line spacing is " + mLineSpacingExtra);
     }
 
     /**
@@ -179,6 +183,7 @@ public class MyTextView extends View {
         Paint.FontMetrics fontMetrics = mPaint.getFontMetrics();
         // 获取字体高度
         mTextDimen = (int) (fontMetrics.descent - fontMetrics.ascent);
+        Log.i("wdd", "text dimen is " + mTextDimen);
     }
 
     /**
@@ -188,8 +193,14 @@ public class MyTextView extends View {
      */
     private void mesureWidth() {
         Log.i("wdd", "measureWidth()");
-        // 临时标记文本宽度
-        mTmpWidth = 0;
+        if (TextUtils.isEmpty(mText)) {
+            // 临时标记文本宽度
+            mTmpWidth = 0;
+            mTmpLines = 0;
+            return;
+        }
+        // 初始化第一行文本的宽度
+        mTmpWidth = mTextDimen + mLineSpacingExtra;
         // 临时标记行数
         mTmpLines = 0;
         // 如果高度未设置，则说明高度是wrap_content
@@ -211,7 +222,7 @@ public class MyTextView extends View {
             Log.i("wdd", "height seted");
             // 如果高度有设定，则预先试试每个字排版，测得宽度，先不考虑最大行数和宽度
             // 计算每一列可以排版的字数
-            mLengthPerLine = (int) (mGlobalHeight / mTextDimen);
+            mLengthPerLine = (int) ((mGlobalHeight - 0) / mTextDimen); // 2 * INTIAL_Y
             Log.i("wdd", "mGlobalHeight=" + mGlobalHeight + ";mTextDimen" + mTextDimen);
             Log.i("wdd", "length per line is " + mLengthPerLine);
             // 每行的第j个字，标记
@@ -220,38 +231,50 @@ public class MyTextView extends View {
             for (int i = 0; i < mText.length(); i++) {
                 // 获取单字符
                 char ch = mText.charAt(i);
+                Log.i("wdd", "position -- " + i + "; char is -- " + ch);
                 // 如果遇到换行符
                 if (ch == '\n') {
+                    Log.i("wdd", "换行");
                     // 且不是第一个字符就是换行符
                     if (j > 0) {
+                        Log.i("wdd", "不是第一个字");
                         // 重置标记，改行第0个字
                         j = 0;
                         // 宽度增加(一个文字宽度+行间距)
                         mTmpWidth += mTextDimen + mLineSpacingExtra;
+                        Log.i("wdd", "tmp width in " + i + " is " + mTmpWidth);
                         // 行号+1
                         mTmpLines++;
+                        Log.i("wdd", "当前行--" + mTmpLines);
                     }
                 } else {
+                    Log.i("wdd", "文本字符" + i);
                     // 新增加一个字
                     j++;
+                    Log.i("wdd", "当前行第" + j + "个字");
                     // 如果该行满了，则换行
                     if (j == mLengthPerLine) {
+                        Log.i("wdd", "第" + j + "行满了");
                         // 换行，重置标记
                         j = 0;
+                        Log.i("wdd", "j重置");
                         // 宽度增加(一个文字宽度+行间距)
                         mTmpWidth += mTextDimen + mLineSpacingExtra;
+                        Log.d("wdd", "当前宽度" + mTmpWidth);
                         // 行数+1
                         mTmpLines++;
                     }
                 }
+                Log.i("wdd", "当前下标" + i);
             }
+            Log.i("wdd", "tmp width is " + mTmpWidth);
         }
 
-        Log.i("wwd", "line width is " + (mTextDimen + mLineSpacingExtra));
-        Log.i("wwd", "tmp lines is " + mTmpLines + "---max lines is " + mMaxLines);
+        Log.i("wdd", "line width is " + (mTextDimen + mLineSpacingExtra));
+        Log.i("wdd", "tmp lines is " + mTmpLines + "---max lines is " + mMaxLines);
         // -计算最终可以显示的行数，去最终的文本宽度
         // 与最大行数比较，取较小值
-        if (mTmpLines > mMaxLines) {
+        if (mTmpLines >= mMaxLines) {
             Log.i("wdd", "line more than max");
             // 如果行数超过最大行数，则以最大行数为准
             mTmpLines = mMaxLines;
@@ -274,6 +297,7 @@ public class MyTextView extends View {
                 l++;
                 Log.i("wdd", "line plus--" + l);
             }
+            Log.i("wdd", "最多可以输入" + l + "行");
 
             // 如果行数超过设定的宽度计算得到的行数
             if (mTmpLines > l) {
@@ -330,7 +354,7 @@ public class MyTextView extends View {
         this.mGlobalHeight = height;
 
         Log.i("wdd", "width " + mGlobalWidth + ";height " + mGlobalHeight);
-        syncParams();
+//        syncParams();
         Log.i("wdd", "after syncParams()");
         Log.i("wdd", "width=" + width + ";height=" + height);
     }
@@ -354,6 +378,8 @@ public class MyTextView extends View {
             canvas.drawBitmap(bitmap, mMatrix, mPaint);
         }
         Log.i("wdd", "draw()");
+        // 同步参数
+        syncParams();
         // 画文字
         draw(canvas, this.mText);
     }
@@ -368,7 +394,10 @@ public class MyTextView extends View {
         Log.i("wdd", "enter draw()");
 
         // 得到最终的宽度
-        mGlobalWidth = mTmpWidth;
+        // TODO: 对MATCH_PARENT、WRAP_CONTENT进行分析
+        if (mGlobalWidth < mTmpWidth) {
+            mGlobalWidth = mTmpWidth;
+        }
         // 得到最终行数
         mMaxLines = mTmpLines;
 
@@ -382,7 +411,7 @@ public class MyTextView extends View {
         mPosX = (int) (mGlobalWidth - mTextDimen - halfLineSpacing);
         Log.i("wdd", "---" + mGlobalWidth);
         // 初始化笔刷Y轴坐标
-        mPosY = 0;
+        mPosY = INTIAL_Y;
 
         // -绘制文字
         // 计算字符串长度
@@ -400,12 +429,12 @@ public class MyTextView extends View {
                     // 笔刷左移
                     mPosX -= (mTextDimen + mLineSpacingExtra);
                     // 高度重置
-                    mPosY = 0;
+                    mPosY = INTIAL_Y;
                     // 行号+1
                     curLine++;
                 } else {
                     // 绘制当前文字
-                    canvas.drawText(String.valueOf(ch), mPosX, mPosY, mPaint);
+                    canvas.drawText(String.valueOf(ch), mPosX, mPosY + mTextDimen, mPaint);
                     // 笔刷下移
                     mPosY += mTextDimen;
                 }
@@ -429,11 +458,11 @@ public class MyTextView extends View {
                         j++;
                         // -根据是不是最后一行，判断要不要加省略号
                         // 如果是最后一行
-                        if (curLine > mMaxLines) {
+                        if (curLine >= mMaxLines) {
                             /* 换行符不会出现在文本结尾，说明如果遇到换行符，则文本内容没有结束，
                             所以需要绘制省略号
                              */
-                            canvas.drawText("...", mPosX, mPosY, mPaint);
+                            canvas.drawText("...", mPosX, mPosY + mTextDimen, mPaint);
                             // 跳出循环
                             break;
                         } else { // 如果不是最后一行
@@ -442,7 +471,7 @@ public class MyTextView extends View {
                             // 笔刷左移
                             mPosX -= (mTextDimen + mLineSpacingExtra);
                             // 高度重置
-                            mPosY = 0;
+                            mPosY = INTIAL_Y;
                         }
                     } else { // 不做任何操作
                         // 继续遍历
@@ -452,7 +481,7 @@ public class MyTextView extends View {
                     j++;
                     // -判断是不是最后一行
                     // 如果是最后一行
-                    if (curLine > mMaxLines) {
+                    if (curLine >= mMaxLines) {
                         // -判断有没有到行尾
                         // 如果到行尾
                         if (j == mLengthPerLine) {
@@ -460,16 +489,16 @@ public class MyTextView extends View {
                             // 如果文本内容结束
                             if (i == length - 1) {
                                 // 绘制完内容并退出
-                                canvas.drawText(String.valueOf(ch), mPosX, mPosY, mPaint);
+                                canvas.drawText(String.valueOf(ch), mPosX, mPosY + mTextDimen, mPaint);
                                 break;
                             } else { // 如果文本内容没有结束
                                 // 绘制省略号并退出
-                                canvas.drawText("...", mPosX, mPosY, mPaint);
+                                canvas.drawText("...", mPosX, mPosY + mTextDimen, mPaint);
                                 break;
                             }
                         } else { // 如果不是行尾
                             // 继续绘制
-                            canvas.drawText(String.valueOf(ch), mPosX, mPosY, mPaint);
+                            canvas.drawText(String.valueOf(ch), mPosX, mPosY + mTextDimen, mPaint);
                             // 笔刷下移
                             mPosY += mTextDimen;
                         }
@@ -478,18 +507,18 @@ public class MyTextView extends View {
                         // 如果到达行尾
                         if (j == mLengthPerLine) {
                             // 绘制文字
-                            canvas.drawText(String.valueOf(ch), mPosX, mPosY, mPaint);
+                            canvas.drawText(String.valueOf(ch), mPosX, mPosY + mTextDimen, mPaint);
                             // 笔刷左移
                             mPosX -= (mTextDimen + mLineSpacingExtra);
                             // 高度重置
-                            mPosY = 0;
+                            mPosY = INTIAL_Y;
                             // 重置位置标记
                             j = 0;
                             // 行号+1
                             curLine++;
                         } else { // 如果未到达行尾
                             // 继续绘制
-                            canvas.drawText(String.valueOf(ch), mPosX, mPosY, mPaint);
+                            canvas.drawText(String.valueOf(ch), mPosX, mPosY + mTextDimen, mPaint);
                             // 笔刷下移
                             mPosY += mTextDimen;
                         }
@@ -509,7 +538,7 @@ public class MyTextView extends View {
         if (!TextUtils.equals(text, mText)) {
             this.mText = text;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -523,7 +552,7 @@ public class MyTextView extends View {
         if (mTextColor != color) {
             this.mTextColor = color;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -537,7 +566,7 @@ public class MyTextView extends View {
         if (mTextSize != textSize && textSize > 0) {
             this.mTextSize = textSize;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -551,7 +580,7 @@ public class MyTextView extends View {
         if (mMaxLength != length && length > 0) {
             this.mMaxLength = length;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -565,7 +594,7 @@ public class MyTextView extends View {
         if (mCharSpacing != spacing && spacing > 0) {
             this.mCharSpacing = spacing;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -579,7 +608,7 @@ public class MyTextView extends View {
         if (mLineSpacingExtra != spacing && spacing > 0) {
             this.mLineSpacingExtra = spacing;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -594,7 +623,7 @@ public class MyTextView extends View {
             this.mLineSpacingMultiplier = multiplier;
             this.mLineSpacingExtra = DEFAULT_GLOBAL;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -612,7 +641,7 @@ public class MyTextView extends View {
             this.mGlobalWidth = width;
             Log.i("wdd", "---" + mGlobalWidth);
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -628,7 +657,7 @@ public class MyTextView extends View {
             height = DensityUtils.dip2px(getContext(), height);
             this.mGlobalHeight = height;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
@@ -642,7 +671,7 @@ public class MyTextView extends View {
         if (mMaxLines != lines && lines > 0) {
             this.mMaxLines = lines;
             // 刷新绘制
-            syncParams();
+//            syncParams();
         }
     }
 
