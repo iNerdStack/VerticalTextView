@@ -1,17 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.inerdstack.verticaltextview.MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:background="@android:color/holo_red_light">
-        <com.inerdstack.verticaltextview.MyTextView
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_red_light"
+        android:orientation="vertical">
+        <com.inerdstack.verticaltextview.VerticalTextView
             android:id="@+id/my_text"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="500dp"
+            app:text="安老师辅导记录手法来上课的弗拉基收到了饭卡的水立方科技案例三姐夫斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给拉丝费老师的理发老师快点加拉斯加对方阿里的手机费奥斯卡的拉丝机打发拉斯减肥两款手机"
+            app:textColor="@color/colorPrimary"
+            app:textSize="18sp"
+            app:lineSpacingMultiplier="0.6"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="anniu"/>
     </LinearLayout>
 </RelativeLayout>
