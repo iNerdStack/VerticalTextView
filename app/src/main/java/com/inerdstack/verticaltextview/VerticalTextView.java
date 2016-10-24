@@ -72,10 +72,14 @@ public class VerticalTextView extends View {
     private int mTextDimen;
     // 一行显示的字符数
     private int mLengthPerLine = DEFAULT_GLOBAL;
-    // 临时行号
-    private int mTmpLines;
+    // 实际文本行数
+    private int mRealLines;
     // 临时宽度
     private float mTmpWidth;
+    // 宽度模式
+    private int mWidthMode = DEFAULT_GLOBAL;
+    // 高度模式
+    private int mHeightMode = DEFAULT_GLOBAL;
 
     // -工具
     // 绘制文本的笔刷
@@ -86,6 +90,7 @@ public class VerticalTextView extends View {
     private BitmapDrawable mBackground;
 
     private boolean isFirst = true;
+    private int counter = 1;
 
     public VerticalTextView(Context context) {
         this(context, null);
@@ -150,7 +155,7 @@ public class VerticalTextView extends View {
         measureLineSpacing();
 
         // 计算文本宽度
-        mesureWidth();
+        measureWidth();
 
     }
 
@@ -181,31 +186,32 @@ public class VerticalTextView extends View {
      *
      * @return
      */
-    private void mesureWidth() {
+    private void measureWidth() {
         if (TextUtils.isEmpty(mText)) {
             // 临时标记文本宽度
             mTmpWidth = 0;
-            mTmpLines = 0;
+            mRealLines = 0;
             return;
         }
         // 初始化第一行文本的宽度
         mTmpWidth = mTextDimen + mLineSpacingExtra;
         // 临时标记行数
-        mTmpLines = 0;
+        mRealLines = 1;
         // 如果高度未设置，则说明高度是wrap_content
-        if (mGlobalHeight == DEFAULT_GLOBAL) {
+        if (this.mHeightMode == MeasureSpec.AT_MOST) {
 
             // -此时文本的高度取决于换行符的个数
             // 计算换行符的个数
             int num = containNum(mText, "\n");
             // 计算行号
-            mTmpLines = num + 1;
+            mRealLines = num + 1;
             // 计算文本宽度
-            mTmpWidth = (mTextDimen + mLineSpacingExtra) * mTmpLines;
-        } else {
-            // 如果高度有设定，则预先试试每个字排版，测得宽度，先不考虑最大行数和宽度
+            mTmpWidth = mTextDimen * mRealLines + mLineSpacingExtra * (mRealLines - 1);
+            // 根据内容设置高度设置高度
+            this.mGlobalHeight = mTmpWidth;
+        } else if (this.mHeightMode == MeasureSpec.EXACTLY) { // 如果高度固定，则预先试试每个字排版，测得宽度，先不考虑最大行数和宽度
             // 计算每一列可以排版的字数
-            mLengthPerLine = (int) ((mGlobalHeight - 0) / mTextDimen); // 2 * INTIAL_Y
+            mLengthPerLine = (int) (mGlobalHeight / mTextDimen); // 2 * INTIAL_Y
             // 每行的第j个字，标记
             int j = 0;
             // 遍历文本内容
@@ -221,53 +227,64 @@ public class VerticalTextView extends View {
                         // 宽度增加(一个文字宽度+行间距)
                         mTmpWidth += mTextDimen + mLineSpacingExtra;
                         // 行号+1
-                        mTmpLines++;
+                        mRealLines++;
                     }
                 } else {
                     // 新增加一个字
                     j++;
                     // 如果该行满了，则换行
-                    if (j == mLengthPerLine) {
+                    if (j == mLengthPerLine && i < mText.length() - 1) {
                         // 换行，重置标记
                         j = 0;
                         // 宽度增加(一个文字宽度+行间距)
                         mTmpWidth += mTextDimen + mLineSpacingExtra;
                         // 行数+1
-                        mTmpLines++;
+                        mRealLines++;
                     }
                 }
             }
         }
 
-        // -计算最终可以显示的行数，去最终的文本宽度
+        // -计算最终可以显示的行数，取最终的文本宽度
         // 与最大行数比较，取较小值
-        if (mTmpLines >= mMaxLines) {
+        if (mRealLines > mMaxLines) {
             // 如果行数超过最大行数，则以最大行数为准
-            mTmpLines = mMaxLines;
+            mRealLines = mMaxLines;
             // 计算相应的宽度
-            mTmpWidth = (mTextDimen + mLineSpacingExtra) * mTmpLines;
+            mTmpWidth = mTextDimen * mRealLines + mLineSpacingExtra * (mRealLines - 1);
         }
 
-        // 与设定的高度相比较，取较小值
-        if (mGlobalWidth > 0) { // 排除match_parent(-1)，match_parent的值在onMeasure中计算
-            // 以文字宽度+行高作为一行的宽度，取得完整行宽的行数
-            int l = (int) (mGlobalWidth / (mTextDimen + mLineSpacingExtra));
-            // 最终剩余的宽度与（文字宽度+一般的行高）比较，即看是否可以再完整显示一行
-            float remain = mGlobalWidth % (mTextDimen + mLineSpacingExtra);
-            // 如果剩余宽度可以容纳一行文字，则多加一行
-            if (remain > mTextDimen + mLineSpacingExtra / 2) {
-                l++;
-            }
+        // 如果宽度固定，则文本占据的宽度和设定宽度作比较
+        if (this.mWidthMode == MeasureSpec.EXACTLY) {
+            /*
+            根据公式：
+                行间距 * （行数 - 1） + 行高 * 行数 <= 总宽度
+            得行数：
+                行数 = （总宽度 + 行间距） / （行间距 + 行高）
+            */
+            int lines = (int) ((this.mGlobalWidth + this.mLineSpacingExtra) / (this.mLineSpacingExtra + this.mTextDimen));
+//            // 以文字宽度+行高作为一行的宽度，取得完整行宽的行数
+//            int l = (int) (mGlobalWidth / (mTextDimen + mLineSpacingExtra));
+//            // 最终剩余的宽度与（文字宽度+一般的行高）比较，即看是否可以再完整显示一行
+//            float remain = mGlobalWidth % (mTextDimen + mLineSpacingExtra);
+//            // 如果剩余宽度可以容纳一行文字，则多加一行
+//            if (remain > mTextDimen + mLineSpacingExtra / 2) {
+//                l++;
+//            }
 
             // 如果行数超过设定的宽度计算得到的行数
-            if (mTmpLines > l) {
+            if (mRealLines > lines) {
                 // 则以设定宽度下得到的行数为准
-                mTmpLines = l;
+                mRealLines = lines;
                 // 文本宽度以设定的宽度为准
                 mTmpWidth = mGlobalWidth;
             }
-        }
+        } else if (mWidthMode == MeasureSpec.AT_MOST) {// 如果模式是适应内容（wrap_content）
+            mGlobalWidth = mTmpWidth;
+            Log.i("widd", "1-" + mWidthMode);
+        } else {
 
+        }
     }
 
     /**
@@ -301,16 +318,31 @@ public class VerticalTextView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
+        // 计算宽高
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
 
-        // 如果高度未设置
+        // 如果高度未设置（第一次计算控件高度）
         if (this.mGlobalHeight == DEFAULT_GLOBAL) {
-            this.mGlobalHeight = height;
+            // 计算高度模式
+            this.mHeightMode = MeasureSpec.getMode(heightMeasureSpec);
+            // 如果高度设置为具体的值或match_parent
+            if (this.mHeightMode == MeasureSpec.EXACTLY) {
+                // 计算高度
+                this.mGlobalHeight = height;
+            }
+            // 如果高度设置为wrap_content，则先不计算高度
         }
-        // 如果宽度未设置
+
+        // 如果宽度未设置（第一次计算控件宽度）
         if (this.mGlobalWidth == DEFAULT_GLOBAL) {
-            this.mGlobalWidth = width;
+            // 计算宽度模式
+            this.mWidthMode = MeasureSpec.getMode(widthMeasureSpec);
+            Log.i("widd", "2-" + mWidthMode);
+            // 如果宽度设置为具体的值或match_parent
+            if (mWidthMode == MeasureSpec.EXACTLY) {
+                this.mGlobalWidth = width;
+            }
         }
     }
 
@@ -332,6 +364,8 @@ public class VerticalTextView extends View {
         }
         // 同步参数
         syncParams();
+        // 设置布局大小
+        setMeasuredDimension((int)this.mGlobalWidth, (int)this.mGlobalHeight);
         // 画文字
         draw(canvas, this.mText);
     }
@@ -350,19 +384,12 @@ public class VerticalTextView extends View {
             mGlobalWidth = mTmpWidth;
         }
 
-        if (mTmpLines >= mMaxLines) {
-            // 得到最终行数
-            mMaxLines = mTmpLines;
-        }
-
         // 当前字符
         char ch;
         // 当前行号
         int curLine = 1;
-        // 行间距的一般
-        float halfLineSpacing = mLineSpacingExtra / 2;
         // 初始化笔刷X轴坐标
-        mPosX = (int) (mGlobalWidth - mTextDimen - halfLineSpacing);
+        mPosX = (int) (mGlobalWidth - mTextDimen);
         // 初始化笔刷Y轴坐标
         mPosY = INTIAL_Y;
 
@@ -370,7 +397,7 @@ public class VerticalTextView extends View {
         // 计算字符串长度
         int length = mText.length();
         // 如果高度未设定
-        if (mGlobalHeight == DEFAULT_GLOBAL) {
+        if (this.mHeightMode == MeasureSpec.AT_MOST) {
             // 遍历字符串
             for (int i = 0; i < length; i++) {
                 // 获取当前字符
@@ -392,7 +419,7 @@ public class VerticalTextView extends View {
                 }
             }
 
-        } else { // 如果高度设定
+        } else if (this.mHeightMode == MeasureSpec.EXACTLY) { // 如果高度设定
             // 当前行的第几个字符
             int j = 0;
             // 遍历字符串
@@ -409,7 +436,7 @@ public class VerticalTextView extends View {
                         j++;
                         // -根据是不是最后一行，判断要不要加省略号
                         // 如果是最后一行
-                        if (curLine >= mMaxLines) {
+                        if (curLine >= mRealLines) {
                             /* 换行符不会出现在文本结尾，说明如果遇到换行符，则文本内容没有结束，
                             所以需要绘制省略号
                              */
@@ -424,7 +451,7 @@ public class VerticalTextView extends View {
                             // 高度重置
                             mPosY = INTIAL_Y;
                         }
-                    } else { // 不做任何操作
+                    } else { // 如果换行符出现在行首，不做任何操作
                         // 继续遍历
                     }
                 } else { // 如果没有遇到换行符
@@ -432,7 +459,7 @@ public class VerticalTextView extends View {
                     j++;
                     // -判断是不是最后一行
                     // 如果是最后一行
-                    if (curLine >= mMaxLines) {
+                    if (curLine >= mRealLines) {
                         // -判断有没有到行尾
                         // 如果到行尾
                         if (j == mLengthPerLine) {
@@ -564,10 +591,13 @@ public class VerticalTextView extends View {
      */
     public void setWidth(float width) {
         if (mGlobalWidth != width && width > 0) {
+            this.mWidthMode = MeasureSpec.EXACTLY;
+
+            Log.i("widd", "4-" + mWidthMode);
             this.mGlobalWidth = width;
         }
         // 刷新视图
-        refreshView();
+//        refreshView();
     }
 
     /**
@@ -577,10 +607,11 @@ public class VerticalTextView extends View {
      */
     public void setHeight(float height) {
         if (mGlobalHeight != height && height > 0) {
+            this.mHeightMode = MeasureSpec.EXACTLY;
             this.mGlobalHeight = height;
         }
         // 刷新视图
-        refreshView();
+//        refreshView();
     }
 
     /**

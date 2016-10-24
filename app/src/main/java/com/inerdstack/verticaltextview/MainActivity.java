@@ -3,6 +3,7 @@ package com.inerdstack.verticaltextview;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.RelativeLayout;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -14,13 +15,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         myTextView = (VerticalTextView) findViewById(R.id.my_text);
-//        myTextView.setText("测试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是试哈asf阿斯蒂芬阿发是打发收到发生发顺丰的阿斯蒂芬阿斯顿发送到发送到分公司地方大个地方是打发个地方官去问他关心的是啊阿斯蒂芬阿萨德发生的发顺丰大概二个是分开就是安徽案发后奥斯卡按时给对方看晚会if和 华山路发生 是啊是");
-////        myTextView.setMaxLines(20);
-//        myTextView.setTextSize(24);
-//        myTextView.setLineSpacingMultiplier(0.3f);
-//        myTextView.setWidth(250);
-//        myTextView.setHeight(150);
-//        myTextView.setMaxLines(3);
-//        myTextView.setTextColor(ContextCompat.getColor(this, android.R.color.white));
+
+        myTextView.setText("履行了");
+        myTextView.setTextColor(ContextCompat.getColor(this, R.color.colorAccent));
+        // 文本字体大小
+        int textSize = DensityUtils.sp2px(this, 16);
+        // 设置行间距倍数
+        myTextView.setLineSpacingMultiplier(1);
+        // 设置字体大小
+        myTextView.setTextSize(textSize);
+        // 设置高度
+//        myTextView.setHeight(DensityUtils.dip2px(this, 150));
+        // 设置最大行号
+        myTextView.setMaxLines(3);
     }
 }
